@@ -1,55 +1,49 @@
+// 1. IMPORTS
 import express from 'express';
 import { GoogleGenAI } from '@google/genai';
 import 'dotenv/config';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
+// 2. CONFIGURATION
 const app = express();
 const port = process.env.PORT || 3000;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// Tell Express to serve our static HTML/CSS files from a folder called "public"
+// 3. MIDDLEWARE (The "Metal Detectors")
 app.use(express.static('public'));
-
-// Tell Express to understand JSON data sent from the website
 app.use(express.json());
 
-// Initialize the AI securely
+// 4. THE AI BRAIN
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-// Create an "Endpoint" (a URL route) that the website can call
+// 5. THE "FRONT DOOR" (Explicitly send index.html)
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// 6. THE ACTION ROUTE (The AI Review)
 app.post('/api/review', async (req, res) => {
     try {
-        // Get the code that the user typed into the website
         const userCode = req.body.code; 
-
-        const prompt = `
-        You are an expert code reviewer for Team Cloud Crew. 
-        Review the following code for syntax, logic, and optimization.
-        
-        Code:
-        ${userCode}
-        `;
-
-        // Call the AI model
+        const prompt = `Review this code for errors: ${userCode}`;
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-1.5-flash',
             contents: prompt,
         });
-
-        // Send the AI's response back to the website
         res.json({ result: response.text });
-
     } catch (error) {
         console.error("Server Error:", error);
         res.status(500).json({ error: "Failed to generate review." });
     }
 });
 
-// Start the server
-// Local testing: Only start the server if we are NOT on Vercel
+// 7. VERCEL DEPLOYMENT TWEAK (The Final Exit)
 if (process.env.NODE_ENV !== 'production') {
     app.listen(port, () => {
         console.log(`Server is running at http://localhost:${port}`);
     });
 }
 
-// Vercel requires us to export the app
 export default app;
