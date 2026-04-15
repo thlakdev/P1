@@ -29,7 +29,7 @@ app.post('/api/review', async (req, res) => {
         const userCode = req.body.code; 
         const prompt = `Review this code for errors: ${userCode}`;
         const response = await ai.models.generateContent({
-            model: 'gemini-1.5-flash',
+            model: 'gemini-2.5-flash',
             contents: prompt,
         });
         res.json({ result: response.text });
